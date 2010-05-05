@@ -1,0 +1,10 @@
+= Redmine CAS Plugin
+
+Redmine CAS authentication plugin.
+
+= Requirements
+
+ruby script/plugin install git@github.com:ifad/redmine-cas-plugin.git
+Tested with Redmine 0.9.x
+
+
