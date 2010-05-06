@@ -1,4 +1,4 @@
 # English strings go here for Rails i18n
 en:
   cas_authenticated_user_not_found: "Username %s authenticated with CAS but not found in Redmine. Please create user in Redmine."
-
+  login_without_cas: "Sign in without CAS"

@@ -14,8 +14,9 @@ Redmine::Plugin.register :redmine_cas do
                 :controller => 'account',
                 :action     => 'login_without_cas'
               },
-              :caption => 'Sign in without CAS',
-              :after   => :login
+              :caption => :login_without_cas,
+              :after   => :login,
+              :if      => Proc.new { !User.current.logged? }
   
   settings :default => {
     :enabled      => false,
@@ -50,15 +51,26 @@ class RedmineCas
   
     # Update CAS configuration using settings.
     # Has to be run at least once and can be run more times (after plugin configuration updates).
-    def configure_client!
-      CASClient::Frameworks::Rails::Filter.configure(
-        :cas_base_url => RedmineCas.get_setting(:cas_base_url)
-      )
-    end
-    
-    # Check if CAS client has the same config as plugin
-    def client_config_up_to_date?
-      client_config && client_config[:cas_base_url] == plugin.settings['cas_base_url']
+    def configure!
+      
+      # Setup menu
+      if ready?
+        
+        # CAS is ready, make sure we're showing CAS menu items
+        
+        
+      else
+        
+        # CAS is not ready, make sure CAS menu items are not displayed
+        
+      end
+      
+      # (Re)configure client if not configured or settings changed
+      unless client_config && client_config[:cas_base_url] == get_setting(:cas_base_url)
+        CASClient::Frameworks::Rails::Filter.configure(
+          :cas_base_url => RedmineCas.get_setting(:cas_base_url)
+        )
+      end
     end
     
     # Is CAS enabled, client configured and server available
@@ -68,12 +80,13 @@ class RedmineCas
     
     # Check if server at configured url is alive
     def server_reachable_by_client?
-      begin
+      @server_available_for_url ||= {}
+      if client_config
         if url = client_config[:cas_base_url]
           if @server_available_for_url[url]
             true
           else
-            if !HTTPClient.new.get_content(url).empty?
+            if (!HTTPClient.new.get_content(url).empty? rescue false)
               @server_available_for_url[url] = true
             else
               false
@@ -82,8 +95,6 @@ class RedmineCas
         else
           false
         end
-#      rescue
-#        false
       end
     end
     
@@ -95,10 +106,9 @@ end
 # This way we can use it in development (executed on every reload) and production (executed on first reload only)
 # without worrying about plugins not being reloaded.
 ActionController::Dispatcher.to_prepare do
-
-  unless RedmineCas.client_config_up_to_date?
-    RedmineCas.configure_client!
-  end
+  
+  # Let's (re)configure our plugin according to current settings
+  RedmineCas.configure!
   
   AccountController.class_eval do
   
