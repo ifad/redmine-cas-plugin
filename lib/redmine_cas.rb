@@ -19,9 +19,11 @@ Redmine::Plugin.register :redmine_cas do
               :if      => Proc.new { RedmineCas.ready? && RedmineCas.get_setting(:login_without_cas) && !User.current.logged? }
   
   settings :default => {
-    :enabled           => false,
-    :cas_base_url      => 'https://localhost',
-    :login_without_cas => false
+    :enabled                         => false,
+    :cas_base_url                    => 'https://localhost',
+    :login_without_cas               => false,
+    :auto_create_users               => false,
+    :auto_update_attributes_on_login => false
   }, :partial => 'settings/settings'
   
 end
@@ -90,6 +92,20 @@ class RedmineCas
       end
     end
     
+    # Return User model friendly attributes from CAS session.
+    # Returned attributes can be used for User#update_attributes(...)
+    # Please note :login attribute is not included.
+    # Supported attribute names include :firstname, :lastname and :mail (from CAS :givenName, :sn and :mail attributes)
+    def user_attributes_by_session(session)
+      attributes = {}
+      if extra_attributes = session[:cas_extra_attributes]
+        attributes[:firstname] = extra_attributes[:givenName].first if extra_attributes[:givenName] && extra_attributes[:givenName].first
+        attributes[:lastname] = extra_attributes[:sn].first if extra_attributes[:sn] && extra_attributes[:sn].first
+        attributes[:mail] = extra_attributes[:mail].first if extra_attributes[:mail] &&  extra_attributes[:mail].first
+      end
+      attributes
+    end
+    
   end
   
 end
@@ -112,7 +128,7 @@ ActionController::Dispatcher.to_prepare do
   
   # Let's (re)configure our plugin according to the current settings
   RedmineCas.configure!
-  
+
   AccountController.class_eval do
   
     def login_with_cas
@@ -121,18 +137,50 @@ ActionController::Dispatcher.to_prepare do
           true
         else
           if CASClient::Frameworks::Rails::Filter.filter(self)
-            if user = User.find_by_login(session[:cas_user])
-              session[:user_id] = user.id
-              user_setup
-              redirect_to :controller => 'my', :action => 'page'
+            
+            # User has been successfully authenticated with CAS
+            user = User.find_or_initialize_by_login(session[:cas_user])
+            unless user.new_record?
+              
+              # ...and also found in Redmine
+              if user.active?
+                
+                # ...and user is active
+                if RedmineCas.get_setting(:auto_update_attributes_on_login)
+                  
+                  # Plugin configured to update users from CAS extra user attributes
+                  unless user.update_attributes(RedmineCas.user_attributes_by_session(session))
+                    # TODO: error updating attributes on login from CAS. We can skip this for now.
+                  end
+                end
+                successful_authentication(user)
+              else
+                account_pending
+              end
             else
-              unless flash[:error]
+              
+              # ...user has been authenticated with CAS but not found in Redmine
+              if RedmineCas.get_setting(:auto_create_users)
+                
+                # Plugin config says to create user, let's try by getting as much as possible
+                # from CAS extra user attributes. To add/remove extra attributes passed from CAS
+                # server, please refer to your CAS server documentation.
+                user.attributes = RedmineCas.user_attributes_by_session(session)
+                user.status = User::STATUS_REGISTERED
+
+                register_automatically(user) do
+                  onthefly_creation_failed(user)
+                end
+              else
+                
+                # User auto-create disabled in plugin config
                 flash[:error] = l(:cas_authenticated_user_not_found, session[:cas_user])
-                redirect_to :controller => params[:controller],
-                            :action     => params[:action],
-                            :back_url   => params[:back_url]
+                redirect_to home_url
               end
             end
+          else
+            
+            # Not authenticated with CAS, CASClient::Frameworks::Rails::Filter.filter(self) takes care of redirection
           end
         end
       else
@@ -143,7 +191,7 @@ ActionController::Dispatcher.to_prepare do
     alias_method_chain :login, :cas
     
     def logout_with_cas
-      if session[:cas_user]
+      if RedmineCas.ready?
         CASClient::Frameworks::Rails::Filter.logout(self, home_url)
         logout_user
       else

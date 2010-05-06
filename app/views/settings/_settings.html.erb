@@ -13,4 +13,14 @@
     <label>Keep native login link</label>
     <%= check_box_tag 'settings[login_without_cas]', true, @settings[:login_without_cas] %>
   </p>
+  <p>
+    <label>Auto create users</label>
+    <%= check_box_tag 'settings[auto_create_users]', true, @settings[:auto_create_users] %><br />
+    <em>Create Redmine users on-the-fly for successfully authenticated CAS users if they don't exist in Redmine yet</em>
+  </p>
+  <p>
+    <label>Update user attributes</label>
+    <%= check_box_tag 'settings[auto_update_attributes_on_login]', true, @settings[:auto_update_attributes_on_login] %><br />
+    <em>On each login update Redmine user attributes from CAS extra user attributes</em>
+  </p>
 </fieldset>
