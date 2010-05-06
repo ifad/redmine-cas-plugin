@@ -1,0 +1,12 @@
+
+<fieldset>
+  <legend>CAS Plugin settings</legend>
+  <p>
+    <label>Enabled</label>
+    <%= check_box_tag 'settings[enabled]', true, @settings[:enabled] %>
+  </p>
+  <p>
+    <label>CAS base url</label>
+    <%= text_field_tag 'settings[cas_base_url]', @settings[:cas_base_url] %>
+  </p>
+</fieldset>
