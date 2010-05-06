@@ -9,4 +9,8 @@
     <label>CAS base url</label>
     <%= text_field_tag 'settings[cas_base_url]', @settings[:cas_base_url] %>
   </p>
+  <p>
+    <label>Keep native login link</label>
+    <%= check_box_tag 'settings[login_without_cas]', true, @settings[:login_without_cas] %>
+  </p>
 </fieldset>

@@ -3,9 +3,9 @@ require 'casclient'
 require 'casclient/frameworks/rails/filter'
 
 Redmine::Plugin.register :redmine_cas do
-  name        "Redmine CAS plugin"
+  name        "CAS Authentication"
   author      'Mirek Rusin'
-  description "Redmine CAS authentication"
+  description "CAS single sign-on service authentication support. After configuring plugin login/logout actions will be delegated to CAS server."
   version     '0.0.2'
   
   menu        :account_menu,
@@ -16,15 +16,17 @@ Redmine::Plugin.register :redmine_cas do
               },
               :caption => :login_without_cas,
               :after   => :login,
-              :if      => Proc.new { !User.current.logged? }
+              :if      => Proc.new { RedmineCas.ready? && RedmineCas.get_setting(:login_without_cas) && !User.current.logged? }
   
   settings :default => {
-    :enabled      => false,
-    :cas_base_url => 'https://localhost'
+    :enabled           => false,
+    :cas_base_url      => 'https://localhost',
+    :login_without_cas => false
   }, :partial => 'settings/settings'
   
 end
 
+# Utility class to simplify plugin usage
 class RedmineCas
   
   class << self
@@ -39,32 +41,22 @@ class RedmineCas
     
     # Get plugin setting value or it's default value in a safe way.
     # If the setting key is not found, returns nil.
+    # If the plugin has not been registered yet, returns nil.
     def get_setting(name)
-      if Setting["plugin_#{plugin.id}"]
-        Setting["plugin_#{plugin.id}"][name]
-      else
-        if plugin.settings[:default].has_key?(name)
-          plugin.settings[:default][name]
+      if plugin
+        if Setting["plugin_#{plugin.id}"]
+          Setting["plugin_#{plugin.id}"][name]
+        else
+          if plugin.settings[:default].has_key?(name)
+            plugin.settings[:default][name]
+          end
         end
       end
     end
   
     # Update CAS configuration using settings.
-    # Has to be run at least once and can be run more times (after plugin configuration updates).
+    # Can be run more than once (it's invoked on each plugin settings update).
     def configure!
-      
-      # Setup menu
-      if ready?
-        
-        # CAS is ready, make sure we're showing CAS menu items
-        
-        
-      else
-        
-        # CAS is not ready, make sure CAS menu items are not displayed
-        
-      end
-      
       # (Re)configure client if not configured or settings changed
       unless client_config && client_config[:cas_base_url] == get_setting(:cas_base_url)
         CASClient::Frameworks::Rails::Filter.configure(
@@ -102,12 +94,23 @@ class RedmineCas
   
 end
 
-# Let's use dispatcher to setup CAS.
-# This way we can use it in development (executed on every reload) and production (executed on first reload only)
-# without worrying about plugins not being reloaded.
+# We're using dispatcher to setup CAS.
+# This way we can work in development environment (where to_prepare is executed on every page reload)
+# and production (executed once on first page load only).
+# This way we're avoiding the problem where Rails reloads models but not plugins in development mode.
 ActionController::Dispatcher.to_prepare do
   
-  # Let's (re)configure our plugin according to current settings
+  # We're watching for setting updates for the plugin.
+  # After each change we want to reconfigure CAS client.
+  Setting.class_eval do
+    after_save do
+      if name == 'plugin_redmine_cas'
+        RedmineCas.configure!
+      end
+    end
+  end
+  
+  # Let's (re)configure our plugin according to the current settings
   RedmineCas.configure!
   
   AccountController.class_eval do

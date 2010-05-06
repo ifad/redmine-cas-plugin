@@ -1,0 +1,36 @@
+# Redmine CAS Plugin
+
+CAS single sign-on service authentication support for Redmine.
+Install and configure plugin to delegate login/logout actions to your CAS server.
+
+# Requirements
+
+    Tested with Redmine 0.9.x
+    sudo gem install rubycas-client
+    sudo gem install httpclient
+
+# Installation & Configuration
+
+- install the plugin:
+
+    cd <redmine>/vendor/plugins
+    git clone git@github.com:ifad/redmine-cas-plugin.git redmine_cas
+    
+- (re)start Redmine server
+- login as admin and go to `Administration -> Plugins -> CAS Plugin -> Configure`
+- Tick `Enabled` and enter `CAS server base URL`
+- Apply, logout
+- From now on all login requests will be delegated to CAS server
+  Also all CAS based sessions will be delegated to CAS logout
+
+You can also disable `Sign in without CAS` (native login) link using plugin configuration panel.
+
+To access native login use `http(s)://<redmine>/account/login_without_cas` link.
+
+# License
+
+Released under the same license as Redmine - GPL v2
+
+# Authors
+
+- Mirek Rusin <mirek [at] me [dot] com>
