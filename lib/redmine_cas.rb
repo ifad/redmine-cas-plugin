@@ -67,9 +67,9 @@ class RedmineCas
     # Can be run more than once (it's invoked on each plugin settings update).
     def configure!
       # (Re)configure client if not configured or settings changed
-      if client_config && client_config[:cas_base_url] && client_config[:cas_base_url] != get_setting(:cas_base_url)
+      if get_setting(:cas_base_url) && client_config[:cas_base_url] != get_setting(:cas_base_url)
         CASClient::Frameworks::Rails::Filter.configure(
-          :cas_base_url => RedmineCas.get_setting(:cas_base_url)
+          :cas_base_url => get_setting(:cas_base_url)
         )
       end
     end
