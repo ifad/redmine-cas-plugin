@@ -45,14 +45,21 @@ class RedmineCas
     # If the setting key is not found, returns nil.
     # If the plugin has not been registered yet, returns nil.
     def get_setting(name)
-      if plugin
-        if Setting["plugin_#{plugin.id}"]
-          Setting["plugin_#{plugin.id}"][name]
-        else
-          if plugin.settings[:default].has_key?(name)
-            plugin.settings[:default][name]
+      begin
+        if plugin
+          if Setting["plugin_#{plugin.id}"]
+            Setting["plugin_#{plugin.id}"][name]
+          else
+            if plugin.settings[:default].has_key?(name)
+              plugin.settings[:default][name]
+            end
           end
         end
+      rescue
+        
+        # We don't care about exceptions which can actually occur ie. when running
+        # migrations and settings table has not yet been created.
+        nil
       end
     end
   
@@ -60,7 +67,7 @@ class RedmineCas
     # Can be run more than once (it's invoked on each plugin settings update).
     def configure!
       # (Re)configure client if not configured or settings changed
-      unless client_config && client_config[:cas_base_url] == get_setting(:cas_base_url)
+      if client_config && client_config[:cas_base_url] && client_config[:cas_base_url] != get_setting(:cas_base_url)
         CASClient::Frameworks::Rails::Filter.configure(
           :cas_base_url => RedmineCas.get_setting(:cas_base_url)
         )
