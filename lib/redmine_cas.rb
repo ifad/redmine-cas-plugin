@@ -38,7 +38,7 @@ class RedmineCas
     
     def client_configured?
       if client_config
-        !client_config[cas_base_url].blank?
+        !client_config[:cas_base_url].blank?
       end
     end
     
