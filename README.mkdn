@@ -7,7 +7,8 @@ Install and configure plugin to delegate login/logout actions to your CAS server
 
     Tested with Redmine 0.9.x
     sudo gem install rubycas-client
-    sudo gem install httpclient (use >= 2.1.5.2 as some older versions have SSL bugs)
+
+As of version 0.3 httpclient dependency has been dropped.
 
 # Installation & Configuration
 
