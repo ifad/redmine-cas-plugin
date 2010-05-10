@@ -7,7 +7,7 @@ Install and configure plugin to delegate login/logout actions to your CAS server
 
     Tested with Redmine 0.9.x
     sudo gem install rubycas-client
-    sudo gem install httpclient
+    sudo gem install httpclient (use >= 2.1.5.2 as some older versions have SSL bugs)
 
 # Installation & Configuration
 
@@ -25,7 +25,7 @@ Install and configure plugin to delegate login/logout actions to your CAS server
 
 You can also disable `Sign in without CAS` (native login) link using plugin configuration panel.
 
-To access native login use `http(s)://<redmine>/account/login_without_cas` link.
+To access native login directly use `http(s)://<redmine>/account/login_without_cas` link.
 
 # License
 
