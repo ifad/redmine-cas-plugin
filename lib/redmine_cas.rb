@@ -26,7 +26,7 @@ if defined?(Redmine)
       :login_without_cas               => false,
       :auto_create_users               => false,
       :auto_update_attributes_on_login => false
-    }, :partial => 'settings/settings'
+    }, :partial => 'settings-cas/settings'
   
   end
 end
