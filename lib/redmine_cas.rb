@@ -191,6 +191,7 @@ if defined?(ActionController)
                     end
                   end
                   successful_authentication(user)
+		  session[:cas_login] = true
                 else
                   account_pending
                 end
@@ -209,10 +210,23 @@ if defined?(ActionController)
                     onthefly_creation_failed(user)
                   end
                 else
-                
-                  # User auto-create disabled in plugin config
-                  flash[:error] = l(:cas_authenticated_user_not_found, session[:cas_user])
-                  redirect_to home_url
+		  #
+		  # User auto-create disabled in plugin config and we can't let them in
+		  #
+		  flash[:error] = l(:cas_authenticated_user_not_found, :uname => session[:cas_user])
+		  if Setting[:login_required]
+			#	
+			# If the site is configured to require login for every page (including home), we
+			# need the user to either login locally or logout of their current CAS account and
+			# pay another visit to the CAS server
+			#
+		        redirect_to "/account/invalid_cas_user"
+		  else
+			#
+			# We can safely redirect the user to home page without fear of redirect loops
+			#
+			redirect_to home_url
+		  end
                 end
               end
             else
@@ -228,7 +242,7 @@ if defined?(ActionController)
       alias_method_chain :login, :cas
     
       def logout_with_cas
-        if RedmineCas.ready?
+        if RedmineCas.ready? && (session[:cas_login] or session[:cas_user])
           CASClient::Frameworks::Rails::Filter.logout(self, home_url)
           logout_user
         else

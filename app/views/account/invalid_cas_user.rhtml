@@ -1,0 +1,19 @@
+
+<div id="login-form">
+
+<table>
+<tr>
+    <td align="center">
+	<!--<%= button_to l(:cas_authenticated_user_not_found_option_login_local), { :action => :login_without_cas, :back_url =>  '/'}, :method => :get %>-->
+	<%= link_to l(:cas_authenticated_user_not_found_option_login_local), { :action => :login_without_cas, :back_url =>  '/'}, :method => :get %>
+    </td>
+</tr>
+<tr>
+    <td align="center">
+	<%= link_to l(:cas_authenticated_user_not_found_option_logout_cas, :uname => session[:cas_user]), :controller => :account, :action => :logout_with_cas %>
+    </td>
+</tr>
+</table>
+
+</div>
+
