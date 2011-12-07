@@ -25,7 +25,8 @@ if defined?(Redmine)
       :cas_base_url                    => 'https://localhost',
       :login_without_cas               => false,
       :auto_create_users               => false,
-      :auto_update_attributes_on_login => false
+      :auto_update_attributes_on_login => false,
+      :cas_logout => true
     }, :partial => 'settings/settings'
   
   end
@@ -228,7 +229,7 @@ if defined?(ActionController)
       alias_method_chain :login, :cas
     
       def logout_with_cas
-        if RedmineCas.ready?
+        if RedmineCas.ready? and RedmineCas.get_setting(:cas_logout)
           CASClient::Frameworks::Rails::Filter.logout(self, home_url)
           logout_user
         else
