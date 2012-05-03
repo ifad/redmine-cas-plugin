@@ -23,4 +23,8 @@
     <%= check_box_tag 'settings[auto_update_attributes_on_login]', true, @settings[:auto_update_attributes_on_login] %><br />
     <em>On each login update Redmine user attributes from CAS extra user attributes</em>
   </p>
+  <p>
+    <label>Logout user in CAS</label>
+    <%= check_box_tag 'settings[cas_logout]', true, @settings[:cas_logout] %><br />
+  </p>
 </fieldset>
